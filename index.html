@@ -47,6 +47,17 @@ body{background:#0d0b08;font-family:Georgia,serif;min-height:100vh;color:#c9b89a
 .zoom-row input::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#7F77DD;cursor:pointer;}
 .zoom-val{font-size:10px;color:#5a5040;font-family:monospace;min-width:30px;}
 
+/* password modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(6,5,3,0.92);z-index:300;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:#1a1510;border:0.5px solid #3d3328;border-radius:10px;padding:28px 32px;display:flex;flex-direction:column;gap:14px;min-width:280px;}
+.modal h3{font-size:14px;color:#c9b89a;letter-spacing:0.04em;font-weight:normal;}
+.modal input{background:#111009;border:0.5px solid #3d3328;color:#c9b89a;font-family:monospace;font-size:13px;padding:8px 12px;border-radius:6px;outline:none;width:100%;}
+.modal input:focus{border-color:#534AB7;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.modal-err{font-size:11px;color:#e27070;display:none;}
+.modal-err.visible{display:block;}
+
 .lb{display:none;position:fixed;inset:0;background:rgba(6,5,3,0.97);z-index:200;flex-direction:column;align-items:center;justify-content:center;}
 .lb.open{display:flex;}
 .lb img{max-width:90vw;max-height:84vh;object-fit:contain;border-radius:3px;}
@@ -54,8 +65,8 @@ body{background:#0d0b08;font-family:Georgia,serif;min-height:100vh;color:#c9b89a
 .lb-role{font-size:10px;color:#5a4a30;margin-top:3px;text-transform:uppercase;letter-spacing:0.08em;}
 .lb-close{position:fixed;top:18px;right:22px;font-size:24px;color:#3d3328;background:none;border:none;cursor:pointer;font-family:sans-serif;line-height:1;}
 .lb-close:hover{color:#c9b89a;}
-
 .empty-msg{padding:40px;color:#3d3328;font-size:13px;font-style:italic;grid-column:1/-1;}
+.saving-indicator{font-size:11px;color:#5a5040;font-family:monospace;}
 </style>
 </head>
 <body>
@@ -72,11 +83,25 @@ body{background:#0d0b08;font-family:Georgia,serif;min-height:100vh;color:#c9b89a
 
 <div class="toolbar">
   <span class="toolbar-info" id="toolbarInfo"></span>
-  <button class="btn btn-edit" id="btnEdit" onclick="toggleEdit()">Edit crops</button>
+  <span class="saving-indicator" id="savingIndicator"></span>
+  <button class="btn btn-edit" id="btnEdit" onclick="onEditClick()">Edit crops</button>
   <button class="btn btn-save" id="btnSave" onclick="saveAll()">Save</button>
 </div>
 <div class="hint-bar" id="hintBar">click any portrait to view the full image</div>
 <div class="npc-grid" id="grid"></div>
+
+<!-- password modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Enter edit password</h3>
+    <input type="password" id="pwInput" placeholder="password" onkeydown="if(event.key==='Enter')checkPw()"/>
+    <div class="modal-err" id="pwErr">incorrect password</div>
+    <div class="modal-btns">
+      <button class="btn" style="color:#5a5040;border-color:#2a2318;" onclick="closeModal()">cancel</button>
+      <button class="btn btn-edit" onclick="checkPw()">enter</button>
+    </div>
+  </div>
+</div>
 
 <div class="lb" id="lb">
   <button class="lb-close" onclick="closeLb()">&#x2715;</button>
@@ -85,33 +110,123 @@ body{background:#0d0b08;font-family:Georgia,serif;min-height:100vh;color:#c9b89a
   <div class="lb-role" id="lbRole"></div>
 </div>
 
-<script>
-// ─────────────────────────────────────────────
-//  NPC DATA — add your NPCs here
-//  src: path to image file relative to index.html
-//  tx/ty: pan offset in px (0,0 = centered)
-//  z: zoom (1 = fit whole image in card)
-// ─────────────────────────────────────────────
-const sections = {
-  circus: [
-    { name:"Dio Torrent",       role:"Ringmaster", src:"images/Dio Torrent art.jpg",        tx:0, ty:0, z:1 },
-    { name:"Hila the Punisher", role:"Enforcer",   src:"images/Hila The Punisher art.png",  tx:0, ty:0, z:1 },
-    { name:"Bingo",             role:"Jester",     src:"images/Bingo art.jpg",               tx:0, ty:0, z:1 },
-  ],
-  pyth:         [],
-  thaldarinwood:[],
-  burrow:       [],
-  seers:        [],
-  party:        [],
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDuQnlsBHLJOcITdLBOOyojNIgJqgXfUkg",
+  authDomain: "krydora-4dddb.firebaseapp.com",
+  databaseURL: "https://krydora-4dddb-default-rtdb.firebaseio.com",
+  projectId: "krydora-4dddb",
+  storageBucket: "krydora-4dddb.firebasestorage.app",
+  messagingSenderId: "111542730806",
+  appId: "1:111542730806:web:36b639e0710ffb25bb9897"
 };
 
-// ─────────────────────────────────────────────
-//  ENGINE — no need to edit below this line
-// ─────────────────────────────────────────────
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const auth = getAuth(app);
+
+// ── NPC DATA ──────────────────────────────────────────────────────────────
+// Add all your NPCs here. tx/ty/z are defaults; Firebase will override with
+// your saved crops as soon as they exist.
+const sections = {
+  circus: [
+    { name:"Dio Torrent",       role:"Ringmaster", src:"images/Dio Torrent art.jpg",       tx:0, ty:0, z:1 },
+    { name:"Hila the Punisher", role:"Enforcer",   src:"images/Hila The Punisher art.png", tx:0, ty:0, z:1 },
+    { name:"Bingo",             role:"Jester",     src:"images/Bingo art.jpg",              tx:0, ty:0, z:1 },
+  ],
+  pyth:          [],
+  thaldarinwood: [],
+  burrow:        [],
+  seers:         [],
+  party:         [],
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
 let currentSection = 'circus';
 let editMode = false;
-let drag = null;
+let isAdmin  = false;
+let drag     = null;
 
+// ── FIREBASE: load saved crops ────────────────────────────────────────────
+async function loadCrops() {
+  try {
+    const snap = await get(ref(db, 'crops'));
+    if (!snap.exists()) return;
+    const data = snap.val();
+    for (const [sec, npcs] of Object.entries(data)) {
+      if (!sections[sec]) continue;
+      npcs.forEach((crop, i) => {
+        if (sections[sec][i] && crop) {
+          sections[sec][i].tx = crop.tx ?? 0;
+          sections[sec][i].ty = crop.ty ?? 0;
+          sections[sec][i].z  = crop.z  ?? 1;
+        }
+      });
+    }
+  } catch(e) { console.warn('Could not load crops', e); }
+}
+
+async function saveCrops() {
+  setSaving('saving…');
+  const payload = {};
+  for (const [sec, npcs] of Object.entries(sections)) {
+    payload[sec] = npcs.map(n => ({ tx: n.tx, ty: n.ty, z: n.z }));
+  }
+  try {
+    await set(ref(db, 'crops'), payload);
+    setSaving('saved ✓');
+    setTimeout(() => setSaving(''), 2000);
+  } catch(e) {
+    setSaving('save failed');
+    console.error(e);
+  }
+}
+
+function setSaving(msg) {
+  document.getElementById('savingIndicator').textContent = msg;
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+// Password modal triggers Firebase email auth.
+// Set up one user in Firebase Auth console: Authentication → Add user
+// Use any email (e.g. dm@krydora.com) and your chosen password.
+// That email/password is what you type into the modal.
+
+window.onEditClick = function() {
+  if (isAdmin) { toggleEdit(); return; }
+  document.getElementById('modalBg').classList.add('open');
+  setTimeout(() => document.getElementById('pwInput').focus(), 50);
+};
+
+window.closeModal = function() {
+  document.getElementById('modalBg').classList.remove('open');
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwErr').classList.remove('visible');
+};
+
+window.checkPw = async function() {
+  const email = 'dm@krydora.com'; // change this to match what you set in Firebase Auth
+  const pw    = document.getElementById('pwInput').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    closeModal();
+    toggleEdit();
+  } catch(e) {
+    document.getElementById('pwErr').classList.add('visible');
+  }
+};
+
+onAuthStateChanged(auth, user => {
+  isAdmin = !!user;
+  if (!user && editMode) exitEdit();
+});
+
+// ── RENDER ────────────────────────────────────────────────────────────────
 function render() {
   const npcs = sections[currentSection];
   const grid = document.getElementById('grid');
@@ -164,6 +279,7 @@ function applyT(i) {
 
 function hint(msg) { document.getElementById('hintBar').textContent = msg; }
 
+// ── DRAG ──────────────────────────────────────────────────────────────────
 function onMouseDown(e) {
   if (!editMode || e.target.tagName==='INPUT') return;
   e.preventDefault();
@@ -189,6 +305,7 @@ document.addEventListener('mouseup', () => {
   drag = null;
 });
 
+// ── ZOOM ──────────────────────────────────────────────────────────────────
 function onWheel(e) {
   if (!editMode) return;
   e.preventDefault();
@@ -199,11 +316,12 @@ function onWheel(e) {
   hint(n.name + '  zoom: '+n.z.toFixed(2)+'x');
 }
 
-function onZoom(i, val) {
+window.onZoom = function(i, val) {
   sections[currentSection][i].z = val;
   applyT(i);
-}
+};
 
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────
 function onClick(e) {
   if (editMode) return;
   const i = +e.currentTarget.dataset.i;
@@ -213,9 +331,10 @@ function onClick(e) {
   document.getElementById('lbRole').textContent = n.role;
   document.getElementById('lb').classList.add('open');
 }
-function closeLb() { document.getElementById('lb').classList.remove('open'); }
+window.closeLb = function() { document.getElementById('lb').classList.remove('open'); };
 document.getElementById('lb').addEventListener('click', e => { if(e.target===e.currentTarget) closeLb(); });
 
+// ── EDIT MODE ─────────────────────────────────────────────────────────────
 function toggleEdit() {
   editMode = !editMode;
   document.getElementById('btnEdit').classList.toggle('active', editMode);
@@ -229,25 +348,40 @@ function toggleEdit() {
     : 'click any portrait to view the full image');
 }
 
-function saveAll() {
-  hint('positions saved!');
-  toggleEdit();
-}
-
-function switchTab(el, key) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  currentSection = key;
+function exitEdit() {
   editMode = false;
   document.getElementById('btnEdit').classList.remove('active');
   document.getElementById('btnSave').classList.remove('visible');
+  document.querySelectorAll('.card').forEach(c => {
+    c.classList.remove('edit-mode');
+    c.style.cursor = 'pointer';
+  });
+}
+
+window.saveAll = async function() {
+  await saveCrops();
+  exitEdit();
+  hint('click any portrait to view the full image');
+};
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+window.switchTab = function(el, key) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentSection = key;
+  exitEdit();
   render();
   hint(sections[key].length === 0
     ? 'no NPCs in this section yet'
     : 'click any portrait to view the full image');
-}
+};
 
-render();
+// ── INIT ──────────────────────────────────────────────────────────────────
+(async () => {
+  await loadCrops();
+  render();
+})();
+
 </script>
 </body>
 </html>
