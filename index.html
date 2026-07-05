@@ -4,117 +4,562 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Krydora — NPC Compendium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#0d0b08;font-family:Georgia,serif;min-height:100vh;color:#c9b89a;}
+:root {
+  --obsidian:   #0C0B0F;
+  --deep:       #111018;
+  --surface:    #18161F;
+  --raised:     #201E28;
+  --gold:       #C9A84C;
+  --gold-dim:   #7A6228;
+  --gold-glow:  rgba(201,168,76,0.15);
+  --ghost:      #E8E0D4;
+  --ghost-dim:  #7A7268;
+  --violet:     #6B5FA8;
+  --violet-dim: #3A3460;
+  --red-dim:    #3D1A1A;
+  --border:     rgba(201,168,76,0.12);
+  --border-mid: rgba(201,168,76,0.22);
+}
 
-.nav{display:flex;align-items:stretch;background:#111009;border-bottom:0.5px solid #2a2318;overflow-x:auto;}
-.nav-title{font-size:16px;color:#e8dcc8;letter-spacing:0.05em;padding:0 20px;display:flex;align-items:center;border-right:0.5px solid #2a2318;white-space:nowrap;flex-shrink:0;}
-.nav-tab{font-size:11px;color:#5a5040;text-transform:uppercase;letter-spacing:0.08em;padding:16px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color 0.15s;user-select:none;}
-.nav-tab:hover{color:#9a8468;}
-.nav-tab.active{color:#c9b89a;border-bottom-color:#7F77DD;}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.toolbar{display:flex;align-items:center;gap:8px;padding:10px 20px;background:#111009;border-bottom:0.5px solid #1e1a14;}
-.toolbar-info{flex:1;font-size:11px;color:#3d3328;text-transform:uppercase;letter-spacing:0.1em;}
-.btn{font-size:11px;text-transform:uppercase;letter-spacing:0.07em;padding:5px 13px;border-radius:20px;cursor:pointer;font-family:Georgia,serif;border:0.5px solid;transition:all 0.15s;background:none;}
-.btn-edit{color:#6b5a3e;border-color:#3d3328;}
-.btn-edit:hover{color:#9a8468;border-color:#5a4a30;}
-.btn-edit.active{color:#CECBF6;border-color:#534AB7;background:#1e1a4a;}
-.btn-save{color:#9FE1CB;border-color:#0F6E56;background:#04342C;display:none;}
-.btn-save.visible{display:block;}
-.hint-bar{padding:6px 20px;font-size:11px;color:#2e2818;font-family:monospace;background:#111009;border-bottom:0.5px solid #191510;min-height:28px;}
+body {
+  background: var(--obsidian);
+  color: var(--ghost);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-.npc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));border-left:0.5px solid #2a2318;border-top:0.5px solid #2a2318;}
+/* ── HEADER ─────────────────────────────────────────── */
+.site-header {
+  position: relative;
+  padding: 36px 48px 0;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(18,14,8,0.9) 0%, transparent 100%);
+}
+.header-top {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 0;
+}
+.site-wordmark {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding-bottom: 20px;
+  flex-shrink: 0;
+}
+.header-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 20px;
+}
+.header-meta {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ghost-dim);
+  padding-bottom: 20px;
+  flex-shrink: 0;
+}
 
-.card{position:relative;aspect-ratio:3/4;overflow:hidden;border-right:0.5px solid #2a2318;border-bottom:0.5px solid #2a2318;cursor:pointer;background:#0d0b08;}
-.card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;transform-origin:center center;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform;}
-.card:not(.edit-mode):hover .card-img{filter:brightness(1.1);}
+/* ── TABS ────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-top: 0;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ghost-dim);
+  padding: 14px 20px;
+  cursor: pointer;
+  border-bottom: 1.5px solid transparent;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+  user-select: none;
+}
+.tab:hover { color: var(--ghost); }
+.tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
 
-.name-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,6,4,0.93) 50%);padding:36px 8px 9px;pointer-events:none;z-index:1;transition:opacity 0.2s;}
-.card.edit-mode .name-bar{opacity:0;}
-.npc-name{font-size:12px;color:#c9b89a;text-align:center;display:block;letter-spacing:0.02em;}
-.npc-role{font-size:10px;color:#5a4a30;text-align:center;display:block;margin-top:2px;text-transform:uppercase;letter-spacing:0.07em;}
+/* ── TOOLBAR ─────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 48px;
+  background: var(--deep);
+  border-bottom: 1px solid var(--border);
+}
+.toolbar-count {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ghost-dim);
+  flex: 1;
+}
+.saving-txt {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--gold-dim);
+  font-family: 'Cinzel', serif;
+}
+.btn-edit {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ghost-dim);
+  background: none;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 7px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-edit:hover {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+}
+.btn-edit.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-glow);
+}
+.btn-save {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--obsidian);
+  background: var(--gold);
+  border: none;
+  padding: 7px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: none;
+  transition: opacity 0.2s;
+}
+.btn-save:hover { opacity: 0.85; }
+.btn-save.visible { display: block; }
 
-.edit-ring{position:absolute;inset:0;border:1.5px solid #7F77DD;pointer-events:none;opacity:0;z-index:2;transition:opacity 0.15s;}
-.card.edit-mode .edit-ring{opacity:1;}
-.edit-tip{position:absolute;top:7px;left:50%;transform:translateX(-50%);font-size:10px;color:#CECBF6;background:rgba(30,26,74,0.92);padding:3px 9px;border-radius:20px;white-space:nowrap;pointer-events:none;opacity:0;z-index:3;transition:opacity 0.15s;}
-.card.edit-mode .edit-tip{opacity:1;}
+/* ── HINT BAR ────────────────────────────────────────── */
+.hint-bar {
+  padding: 7px 48px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(122,114,104,0.6);
+  font-family: 'Inter', sans-serif;
+  background: var(--deep);
+  border-bottom: 1px solid var(--border);
+  min-height: 30px;
+}
 
-.zoom-row{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;background:rgba(10,8,5,0.92);padding:4px 9px;border-radius:20px;opacity:0;pointer-events:none;z-index:3;white-space:nowrap;transition:opacity 0.15s;}
-.card.edit-mode .zoom-row{opacity:1;pointer-events:all;}
-.zoom-row span{font-size:10px;color:#4a3a28;}
-.zoom-row input[type=range]{-webkit-appearance:none;width:80px;height:2px;background:#3d3328;border-radius:2px;outline:none;cursor:pointer;}
-.zoom-row input::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#7F77DD;cursor:pointer;}
-.zoom-val{font-size:10px;color:#5a5040;font-family:monospace;min-width:30px;}
+/* ── GRID LAYOUT ─────────────────────────────────────── */
+.grid-wrap {
+  padding: 40px 48px 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1px;
+  background: var(--border);
+}
 
-/* password modal */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(6,5,3,0.92);z-index:300;align-items:center;justify-content:center;}
-.modal-bg.open{display:flex;}
-.modal{background:#1a1510;border:0.5px solid #3d3328;border-radius:10px;padding:28px 32px;display:flex;flex-direction:column;gap:14px;min-width:280px;}
-.modal h3{font-size:14px;color:#c9b89a;letter-spacing:0.04em;font-weight:normal;}
-.modal input{background:#111009;border:0.5px solid #3d3328;color:#c9b89a;font-family:monospace;font-size:13px;padding:8px 12px;border-radius:6px;outline:none;width:100%;}
-.modal input:focus{border-color:#534AB7;}
-.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
-.modal-err{font-size:11px;color:#e27070;display:none;}
-.modal-err.visible{display:block;}
+/* ── CARD ────────────────────────────────────────────── */
+.card {
+  position: relative;
+  aspect-ratio: 2/3;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--deep);
+  transition: z-index 0s;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 120%, rgba(201,168,76,0.0) 0%, transparent 70%);
+  transition: background 0.4s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+.card:not(.edit-mode):hover::before {
+  background: radial-gradient(ellipse at 50% 120%, rgba(201,168,76,0.18) 0%, transparent 65%);
+}
+.card:not(.edit-mode):hover {
+  z-index: 10;
+}
+.card:not(.edit-mode):hover .card-img {
+  transform: scale(1.04);
+}
 
-.lb{display:none;position:fixed;inset:0;background:rgba(6,5,3,0.97);z-index:200;flex-direction:column;align-items:center;justify-content:center;}
-.lb.open{display:flex;}
-.lb img{max-width:90vw;max-height:84vh;object-fit:contain;border-radius:3px;}
-.lb-name{font-size:14px;color:#c9b89a;margin-top:14px;letter-spacing:0.04em;}
-.lb-role{font-size:10px;color:#5a4a30;margin-top:3px;text-transform:uppercase;letter-spacing:0.08em;}
-.lb-close{position:fixed;top:18px;right:22px;font-size:24px;color:#3d3328;background:none;border:none;cursor:pointer;font-family:sans-serif;line-height:1;}
-.lb-close:hover{color:#c9b89a;}
-.empty-msg{padding:40px;color:#3d3328;font-size:13px;font-style:italic;grid-column:1/-1;}
-.saving-indicator{font-size:11px;color:#5a5040;font-family:monospace;}
+.card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  transform-origin: center center;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+/* bottom name gradient */
+.card-foot {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 48px 12px 14px;
+  background: linear-gradient(
+    to top,
+    rgba(10,8,14,0.97) 0%,
+    rgba(10,8,14,0.7) 50%,
+    transparent 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.card.edit-mode .card-foot { opacity: 0; }
+.card-name {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ghost);
+  text-align: center;
+  display: block;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+.card-role {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  text-align: center;
+  display: block;
+  margin-top: 3px;
+}
+
+/* gold border on hover */
+.card-border {
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  transition: border-color 0.3s;
+  z-index: 3;
+  pointer-events: none;
+}
+.card:not(.edit-mode):hover .card-border {
+  border-color: rgba(201,168,76,0.3);
+}
+.card.edit-mode .card-border {
+  border-color: var(--violet);
+  border-width: 1.5px;
+}
+
+/* edit overlays */
+.edit-tip {
+  position: absolute;
+  top: 10px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ghost);
+  background: rgba(107,95,168,0.9);
+  padding: 4px 10px;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 4;
+  transition: opacity 0.15s;
+}
+.card.edit-mode .edit-tip { opacity: 1; }
+
+.zoom-strip {
+  position: absolute;
+  bottom: 10px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(12,11,15,0.92);
+  border: 1px solid var(--border-mid);
+  padding: 5px 10px;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.card.edit-mode .zoom-strip { opacity: 1; pointer-events: all; }
+.zoom-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ghost-dim);
+}
+.zoom-strip input[type=range] {
+  -webkit-appearance: none;
+  width: 80px; height: 2px;
+  background: var(--raised);
+  border-radius: 1px;
+  outline: none;
+  cursor: pointer;
+}
+.zoom-strip input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+}
+.zoom-val {
+  font-size: 9px;
+  color: var(--gold-dim);
+  font-family: 'Inter', sans-serif;
+  min-width: 28px;
+}
+
+/* ── EMPTY STATE ─────────────────────────────────────── */
+.empty {
+  grid-column: 1 / -1;
+  padding: 80px 0;
+  text-align: center;
+}
+.empty-title {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--ghost-dim);
+  margin-bottom: 8px;
+}
+.empty-sub {
+  font-size: 11px;
+  color: rgba(122,114,104,0.4);
+  letter-spacing: 0.08em;
+}
+
+/* ── LIGHTBOX ────────────────────────────────────────── */
+.lb {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(8,7,12,0.97);
+  z-index: 500;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.lb.open { display: flex; }
+.lb-img {
+  max-width: 88vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 1px;
+}
+.lb-foot {
+  margin-top: 20px;
+  text-align: center;
+}
+.lb-name {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--ghost);
+  display: block;
+}
+.lb-role {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-top: 4px;
+  display: block;
+}
+.lb-close {
+  position: fixed;
+  top: 24px; right: 32px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ghost-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.lb-close:hover { color: var(--gold); }
+
+/* ── PASSWORD MODAL ──────────────────────────────────── */
+.modal-bg {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(8,7,12,0.92);
+  z-index: 600;
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  padding: 32px 36px;
+  width: 320px;
+}
+.modal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+.modal input {
+  width: 100%;
+  background: var(--deep);
+  border: 1px solid var(--border-mid);
+  color: var(--ghost);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 1px;
+  outline: none;
+  margin-bottom: 8px;
+}
+.modal input:focus { border-color: var(--gold-dim); }
+.modal-err {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #c04040;
+  margin-bottom: 16px;
+  display: none;
+  min-height: 14px;
+}
+.modal-err.visible { display: block; }
+.modal-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.modal-cancel {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ghost-dim);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 7px 14px;
+  border-radius: 1px;
+  cursor: pointer;
+}
+.modal-enter {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--obsidian);
+  background: var(--gold);
+  border: none;
+  padding: 7px 14px;
+  border-radius: 1px;
+  cursor: pointer;
+}
+
+/* ── DECORATIVE GOLD RULE ────────────────────────────── */
+.gold-rule {
+  width: 32px; height: 1px;
+  background: var(--gold);
+  margin: 0 48px 0;
+}
 </style>
 </head>
 <body>
 
-<div class="nav">
-  <div class="nav-title">Krydora</div>
-  <div class="nav-tab active"  onclick="switchTab(this,'circus')">Circus Arc</div>
-  <div class="nav-tab" onclick="switchTab(this,'pyth')">Pyth</div>
-  <div class="nav-tab" onclick="switchTab(this,'thaldarinwood')">Thaldarinwood</div>
-  <div class="nav-tab" onclick="switchTab(this,'burrow')">Bizarre Burrow</div>
-  <div class="nav-tab" onclick="switchTab(this,'seers')">Seers Exiles</div>
-  <div class="nav-tab" onclick="switchTab(this,'party')">The Party</div>
-</div>
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-top">
+    <div class="site-wordmark">Krydora</div>
+    <div class="header-rule"></div>
+    <div class="header-meta" id="headerMeta">NPC Compendium</div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <div class="tab active"  data-key="circus">Circus Arc</div>
+    <div class="tab" data-key="pyth">Pyth</div>
+    <div class="tab" data-key="thaldarinwood">Thaldarinwood</div>
+    <div class="tab" data-key="burrow">Bizarre Burrow</div>
+    <div class="tab" data-key="seers">Seers Exiles</div>
+    <div class="tab" data-key="party">The Party</div>
+  </nav>
+</header>
 
+<!-- TOOLBAR -->
 <div class="toolbar">
-  <span class="toolbar-info" id="toolbarInfo"></span>
-  <span class="saving-indicator" id="savingIndicator"></span>
-  <button class="btn btn-edit" id="btnEdit" onclick="onEditClick()">Edit crops</button>
-  <button class="btn btn-save" id="btnSave" onclick="saveAll()">Save</button>
+  <span class="toolbar-count" id="toolbarCount"></span>
+  <span class="saving-txt" id="savingTxt"></span>
+  <button class="btn-edit" id="btnEdit" onclick="onEditClick()">Edit Crops</button>
+  <button class="btn-save visible" id="btnSave" onclick="saveAll()" style="display:none;">Save</button>
 </div>
-<div class="hint-bar" id="hintBar">click any portrait to view the full image</div>
-<div class="npc-grid" id="grid"></div>
+<div class="hint-bar" id="hintBar">Click any portrait to view the full image</div>
 
-<!-- password modal -->
+<!-- GRID -->
+<main class="grid-wrap" id="grid"></main>
+
+<!-- PASSWORD MODAL -->
 <div class="modal-bg" id="modalBg">
   <div class="modal">
-    <h3>Enter edit password</h3>
-    <input type="password" id="pwInput" placeholder="password" onkeydown="if(event.key==='Enter')checkPw()"/>
-    <div class="modal-err" id="pwErr">incorrect password</div>
+    <div class="modal-title">DM Access</div>
+    <input type="password" id="pwInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPw()"/>
+    <div class="modal-err" id="pwErr">Incorrect — try again</div>
     <div class="modal-btns">
-      <button class="btn" style="color:#5a5040;border-color:#2a2318;" onclick="closeModal()">cancel</button>
-      <button class="btn btn-edit" onclick="checkPw()">enter</button>
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-enter" onclick="checkPw()">Enter</button>
     </div>
   </div>
 </div>
 
+<!-- LIGHTBOX -->
 <div class="lb" id="lb">
-  <button class="lb-close" onclick="closeLb()">&#x2715;</button>
-  <img id="lbImg" src="" alt=""/>
-  <div class="lb-name" id="lbName"></div>
-  <div class="lb-role" id="lbRole"></div>
+  <button class="lb-close" onclick="closeLb()">Close ✕</button>
+  <img class="lb-img" id="lbImg" src="" alt=""/>
+  <div class="lb-foot">
+    <span class="lb-name" id="lbName"></span>
+    <span class="lb-role" id="lbRole"></span>
+  </div>
 </div>
 
-<!-- Firebase -->
+<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDuQnlsBHLJOcITdLBOOyojNIgJqgXfUkg",
@@ -126,13 +571,11 @@ const firebaseConfig = {
   appId: "1:111542730806:web:36b639e0710ffb25bb9897"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
+const app  = initializeApp(firebaseConfig);
+const db   = getDatabase(app);
 const auth = getAuth(app);
 
-// ── NPC DATA ──────────────────────────────────────────────────────────────
-// Add all your NPCs here. tx/ty/z are defaults; Firebase will override with
-// your saved crops as soon as they exist.
+// ── NPC DATA ─────────────────────────────────────────────────────────────────
 const sections = {
   circus: [
     { name:"Dio Torrent",       role:"Ringmaster", src:"images/Dio Torrent art.jpg",       tx:0, ty:0, z:1 },
@@ -146,61 +589,51 @@ const sections = {
   party:         [],
 };
 
-// ── STATE ─────────────────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────────
 let currentSection = 'circus';
-let editMode = false;
-let isAdmin  = false;
-let drag     = null;
+let editMode  = false;
+let isAdmin   = false;
+let drag      = null;
 
-// ── FIREBASE: load saved crops ────────────────────────────────────────────
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
 async function loadCrops() {
   try {
     const snap = await get(ref(db, 'crops'));
     if (!snap.exists()) return;
     const data = snap.val();
-    for (const [sec, npcs] of Object.entries(data)) {
+    for (const [sec, arr] of Object.entries(data)) {
       if (!sections[sec]) continue;
-      npcs.forEach((crop, i) => {
-        if (sections[sec][i] && crop) {
-          sections[sec][i].tx = crop.tx ?? 0;
-          sections[sec][i].ty = crop.ty ?? 0;
-          sections[sec][i].z  = crop.z  ?? 1;
+      arr.forEach((c, i) => {
+        if (sections[sec][i] && c) {
+          sections[sec][i].tx = c.tx ?? 0;
+          sections[sec][i].ty = c.ty ?? 0;
+          sections[sec][i].z  = c.z  ?? 1;
         }
       });
     }
-  } catch(e) { console.warn('Could not load crops', e); }
+  } catch(e) { console.warn('loadCrops:', e); }
 }
 
 async function saveCrops() {
-  setSaving('saving…');
+  setSaving('Saving…');
   const payload = {};
   for (const [sec, npcs] of Object.entries(sections)) {
     payload[sec] = npcs.map(n => ({ tx: n.tx, ty: n.ty, z: n.z }));
   }
   try {
     await set(ref(db, 'crops'), payload);
-    setSaving('saved ✓');
-    setTimeout(() => setSaving(''), 2000);
-  } catch(e) {
-    setSaving('save failed');
-    console.error(e);
-  }
+    setSaving('Saved ✓');
+    setTimeout(() => setSaving(''), 2500);
+  } catch(e) { setSaving('Save failed'); console.error(e); }
 }
 
-function setSaving(msg) {
-  document.getElementById('savingIndicator').textContent = msg;
-}
+function setSaving(msg) { document.getElementById('savingTxt').textContent = msg; }
 
-// ── AUTH ──────────────────────────────────────────────────────────────────
-// Password modal triggers Firebase email auth.
-// Set up one user in Firebase Auth console: Authentication → Add user
-// Use any email (e.g. dm@krydora.com) and your chosen password.
-// That email/password is what you type into the modal.
-
+// ── AUTH ──────────────────────────────────────────────────────────────────────
 window.onEditClick = function() {
   if (isAdmin) { toggleEdit(); return; }
   document.getElementById('modalBg').classList.add('open');
-  setTimeout(() => document.getElementById('pwInput').focus(), 50);
+  setTimeout(() => document.getElementById('pwInput').focus(), 60);
 };
 
 window.closeModal = function() {
@@ -210,8 +643,8 @@ window.closeModal = function() {
 };
 
 window.checkPw = async function() {
-  const email = 'dm@krydora.com'; // change this to match what you set in Firebase Auth
-  const pw    = document.getElementById('pwInput').value;
+  const email = 'dm@krydora.com';
+  const pw = document.getElementById('pwInput').value;
   try {
     await signInWithEmailAndPassword(auth, email, pw);
     closeModal();
@@ -226,16 +659,23 @@ onAuthStateChanged(auth, user => {
   if (!user && editMode) exitEdit();
 });
 
-// ── RENDER ────────────────────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────────
 function render() {
   const npcs = sections[currentSection];
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  document.getElementById('toolbarInfo').textContent =
-    npcs.length + ' entr' + (npcs.length === 1 ? 'y' : 'ies');
+
+  const total = Object.values(sections).reduce((a, s) => a + s.length, 0);
+  document.getElementById('toolbarCount').textContent =
+    npcs.length + (npcs.length === 1 ? ' entry' : ' entries');
+  document.getElementById('headerMeta').textContent =
+    'NPC Compendium · ' + total + ' total';
 
   if (npcs.length === 0) {
-    grid.innerHTML = '<div class="empty-msg">No NPCs in this section yet.</div>';
+    grid.innerHTML = `<div class="empty">
+      <div class="empty-title">No entries yet</div>
+      <div class="empty-sub">This section has no NPCs recorded</div>
+    </div>`;
     return;
   }
 
@@ -246,21 +686,21 @@ function render() {
     card.style.cursor = editMode ? 'grab' : 'pointer';
     card.innerHTML = `
       <img class="card-img" id="ci${i}" src="${npc.src}" draggable="false"/>
-      <div class="edit-ring"></div>
-      <div class="edit-tip">drag to pan &nbsp;·&nbsp; scroll or slider to zoom</div>
-      <div class="zoom-row">
-        <span>zoom</span>
+      <div class="card-border"></div>
+      <div class="edit-tip">Drag · Scroll to zoom</div>
+      <div class="zoom-strip">
+        <span class="zoom-label">Zoom</span>
         <input type="range" id="zs${i}" min="0.1" max="5" step="0.01" value="${npc.z}"
           oninput="onZoom(${i},+this.value)" onmousedown="event.stopPropagation()"/>
         <span class="zoom-val" id="zv${i}">${npc.z.toFixed(2)}x</span>
       </div>
-      <div class="name-bar">
-        <span class="npc-name">${npc.name}</span>
-        <span class="npc-role">${npc.role}</span>
+      <div class="card-foot">
+        <span class="card-name">${npc.name}</span>
+        <span class="card-role">${npc.role}</span>
       </div>`;
     card.addEventListener('mousedown', onMouseDown);
     card.addEventListener('click', onClick);
-    card.addEventListener('wheel', onWheel, {passive:false});
+    card.addEventListener('wheel', onWheel, { passive: false });
     grid.appendChild(card);
     applyT(i);
   });
@@ -279,25 +719,23 @@ function applyT(i) {
 
 function hint(msg) { document.getElementById('hintBar').textContent = msg; }
 
-// ── DRAG ──────────────────────────────────────────────────────────────────
+// ── DRAG ──────────────────────────────────────────────────────────────────────
 function onMouseDown(e) {
-  if (!editMode || e.target.tagName==='INPUT') return;
+  if (!editMode || e.target.tagName === 'INPUT') return;
   e.preventDefault();
   const i = +e.currentTarget.dataset.i;
   const n = sections[currentSection][i];
-  drag = {i, startX:e.clientX, startY:e.clientY, startTx:n.tx, startTy:n.ty};
+  drag = { i, startX: e.clientX, startY: e.clientY, startTx: n.tx, startTy: n.ty };
   e.currentTarget.style.cursor = 'grabbing';
 }
-
 document.addEventListener('mousemove', e => {
   if (!drag) return;
   const n = sections[currentSection][drag.i];
   n.tx = drag.startTx + (e.clientX - drag.startX);
   n.ty = drag.startTy + (e.clientY - drag.startY);
   applyT(drag.i);
-  hint(n.name + '  pan: '+n.tx.toFixed(0)+'px, '+n.ty.toFixed(0)+'px  zoom: '+n.z.toFixed(2)+'x');
+  hint(n.name + '  ·  pan ' + n.tx.toFixed(0) + 'px, ' + n.ty.toFixed(0) + 'px  ·  zoom ' + n.z.toFixed(2) + 'x');
 });
-
 document.addEventListener('mouseup', () => {
   if (!drag) return;
   const card = document.querySelector('.card[data-i="'+drag.i+'"]');
@@ -305,7 +743,7 @@ document.addEventListener('mouseup', () => {
   drag = null;
 });
 
-// ── ZOOM ──────────────────────────────────────────────────────────────────
+// ── ZOOM ──────────────────────────────────────────────────────────────────────
 function onWheel(e) {
   if (!editMode) return;
   e.preventDefault();
@@ -313,15 +751,13 @@ function onWheel(e) {
   const n = sections[currentSection][i];
   n.z = Math.max(0.05, Math.min(5, n.z + (e.deltaY < 0 ? 0.06 : -0.06)));
   applyT(i);
-  hint(n.name + '  zoom: '+n.z.toFixed(2)+'x');
 }
-
 window.onZoom = function(i, val) {
   sections[currentSection][i].z = val;
   applyT(i);
 };
 
-// ── LIGHTBOX ──────────────────────────────────────────────────────────────
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
 function onClick(e) {
   if (editMode) return;
   const i = +e.currentTarget.dataset.i;
@@ -332,26 +768,30 @@ function onClick(e) {
   document.getElementById('lb').classList.add('open');
 }
 window.closeLb = function() { document.getElementById('lb').classList.remove('open'); };
-document.getElementById('lb').addEventListener('click', e => { if(e.target===e.currentTarget) closeLb(); });
+document.getElementById('lb').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeLb();
+});
 
-// ── EDIT MODE ─────────────────────────────────────────────────────────────
+// ── EDIT MODE ─────────────────────────────────────────────────────────────────
 function toggleEdit() {
   editMode = !editMode;
-  document.getElementById('btnEdit').classList.toggle('active', editMode);
-  document.getElementById('btnSave').classList.toggle('visible', editMode);
+  const btn = document.getElementById('btnEdit');
+  const sav = document.getElementById('btnSave');
+  btn.classList.toggle('active', editMode);
+  sav.style.display = editMode ? 'block' : 'none';
   document.querySelectorAll('.card').forEach(c => {
     c.classList.toggle('edit-mode', editMode);
     c.style.cursor = editMode ? 'grab' : 'pointer';
   });
   hint(editMode
-    ? 'drag to pan  ·  scroll or slider to zoom  ·  hit Save when done'
-    : 'click any portrait to view the full image');
+    ? 'Drag to pan  ·  scroll or slider to zoom  ·  hit Save when done'
+    : 'Click any portrait to view the full image');
 }
 
 function exitEdit() {
   editMode = false;
   document.getElementById('btnEdit').classList.remove('active');
-  document.getElementById('btnSave').classList.remove('visible');
+  document.getElementById('btnSave').style.display = 'none';
   document.querySelectorAll('.card').forEach(c => {
     c.classList.remove('edit-mode');
     c.style.cursor = 'pointer';
@@ -361,27 +801,28 @@ function exitEdit() {
 window.saveAll = async function() {
   await saveCrops();
   exitEdit();
-  hint('click any portrait to view the full image');
+  hint('Click any portrait to view the full image');
 };
 
-// ── TABS ──────────────────────────────────────────────────────────────────
-window.switchTab = function(el, key) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  currentSection = key;
+// ── TABS ──────────────────────────────────────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentSection = tab.dataset.key;
   exitEdit();
   render();
-  hint(sections[key].length === 0
-    ? 'no NPCs in this section yet'
-    : 'click any portrait to view the full image');
-};
+  hint(sections[currentSection].length === 0
+    ? 'No NPCs in this section yet'
+    : 'Click any portrait to view the full image');
+});
 
-// ── INIT ──────────────────────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────────────────────────
 (async () => {
   await loadCrops();
   render();
 })();
-
 </script>
 </body>
 </html>
